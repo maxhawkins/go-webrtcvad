@@ -51,7 +51,7 @@ func (v *VAD) Process(fs int, audioFrame []byte) (activeVoice bool, err error) {
 	}
 
 	audioFramePtr := (*C.int16_t)(unsafe.Pointer(&audioFrame[0]))
-	frameLen := C.int(len(audioFrame) / 2)
+	frameLen := C.int(len(audioFrame))
 
 	ret := C.WebRtcVad_Process(v.inst, C.int(fs), audioFramePtr, frameLen)
 	switch ret {
