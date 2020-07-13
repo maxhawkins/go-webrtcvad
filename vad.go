@@ -1,7 +1,11 @@
 package webrtcvad
 
-//#cgo CFLAGS: -I.
-//#include "webrtc/common_audio/vad/include/webrtc_vad.h"
+/*
+#cgo CFLAGS: -Iwebrtc
+#include "webrtc/common_audio/vad/include/webrtc_vad.h"
+void rtc_FatalMessage(const char* file, int line, const char* msg) {
+}
+*/
 import "C"
 
 import (
@@ -13,15 +17,15 @@ import (
 func New() (*VAD, error) {
 	var inst *C.struct_WebRtcVadInst
 
-	ret := C.WebRtcVad_Create(&inst)
-	if ret != 0 {
+	inst = C.WebRtcVad_Create()
+	if inst == nil {
 		return nil, errors.New("failed to create VAD")
 	}
 
 	vad := &VAD{inst}
 	runtime.SetFinalizer(vad, free)
 
-	ret = C.WebRtcVad_Init(inst)
+	ret := C.WebRtcVad_Init(inst)
 	if ret != 0 {
 		return nil, errors.New("default mode could not be set")
 	}
@@ -51,7 +55,7 @@ func (v *VAD) Process(fs int, audioFrame []byte) (activeVoice bool, err error) {
 	}
 
 	audioFramePtr := (*C.int16_t)(unsafe.Pointer(&audioFrame[0]))
-	frameLen := C.int(len(audioFrame) / 2)
+	frameLen := C.ulong(len(audioFrame) / 2)
 
 	ret := C.WebRtcVad_Process(v.inst, C.int(fs), audioFramePtr, frameLen)
 	switch ret {
@@ -65,7 +69,7 @@ func (v *VAD) Process(fs int, audioFrame []byte) (activeVoice bool, err error) {
 }
 
 func (v *VAD) ValidRateAndFrameLength(rate int, frameLength int) bool {
-	ret := C.WebRtcVad_ValidRateAndFrameLength(C.int(rate), C.int(frameLength))
+	ret := C.WebRtcVad_ValidRateAndFrameLength(C.int(rate), C.ulong(frameLength))
 	if ret < 0 {
 		return false
 	}
